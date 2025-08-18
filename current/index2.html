@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Procesos</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="dateHelper.js" defer></script>
+    <script src="script.js" defer></script>
+    
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">⚖️ SGP</div>
+            <div class="logo-subtitle">Sistema de Gestión de Procesos</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="nav-item " onclick="showSection('processes')" href="javascript:void(0)">
+                <span class="nav-icon">⚙️</span>
+                Configurar Procesos
+            </a>
+            <a class="nav-item" onclick="showSection('holidays')" href="javascript:void(0)">
+                <span class="nav-icon">🇨🇴</span>
+                Gestión de Festivos
+            </a>
+            <a class="nav-item active" onclick="showSection('calculate')" href="javascript:void(0)">
+                <span class="nav-icon">📅</span>
+                Calcular Fechas
+            </a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <!-- Sección de Procesos -->
+        <div id="processes" class="content-section">
+            <div class="page-header">
+                <h1 class="page-title">Configuración de Procesos</h1>
+                <p class="page-subtitle">Define y organiza los procesos de tu flujo de trabajo</p>
+            </div>
+
+            <div class="panel">
+                <h2>➕ Agregar Nuevo Proceso</h2>
+                <form id="processForm">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="processName">Nombre del Proceso:</label>
+                            <input type="text" id="processName" placeholder="Ej: Designación" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="processDays">Días Hábiles:</label>
+                            <input type="number" id="processDays" min="0" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="processDescription">Descripción:</label>
+                        <textarea id="processDescription" rows="2" placeholder="Descripción del proceso"></textarea>
+                    </div>
+                    <button type="submit" class="btn">Agregar Proceso</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Procesos Configurados</h2>
+                <!--<div id="processTableContainer">-->
+                <div id="processItems">
+                    <div class="no-items">No hay procesos configurados</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Festivos -->
+        <div id="holidays" class="content-section">
+            <div class="page-header">
+                <h1 class="page-title">Gestión de Festivos</h1>
+                <p class="page-subtitle">Administra los días festivos de Colombia</p>
+            </div>
+
+            <div class="panel">
+                <h2>➕ Agregar Nuevo Festivo</h2>
+                <form id="holidayForm">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="holidayName">Nombre del Festivo:</label>
+                            <input type="text" id="holidayName" placeholder="Ej: Día de la Empresa" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="holidayDate">Fecha:</label>
+                            <input type="date" id="holidayDate" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Agregar Festivo</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>🇨🇴 Festivos Configurados</h2>
+                <div id="holidayItems">
+                    <div class="no-items">Cargando festivos...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Cálculo -->
+        <div id="calculate" class="content-section active">
+            <div class="page-header">
+                <h1 class="page-title">Cálculo de Fechas</h1>
+                <p class="page-subtitle">Genera el cronograma automático de tu proceso</p>
+            </div>
+
+            <div class="panel">
+                <h2>📅 Configuración del Cálculo</h2>
+                <div class="form-group">
+                    <label for="startDate">Fecha de Inicio del Trámite:</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <button id="calculateBtn" class="btn btn-success">Calcular Cronograma</button>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Cronograma del Proceso</h2>
+                <div id="timeline" class="timeline">
+                    <div class="no-items">Configure los procesos y calcule las fechas para ver el cronograma</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar Procesos -->
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Proceso</h2>
+                <span class="close" onclick="closeProcessModal()">&times;</span>
+            </div>
+            <form id="editProcessForm">
+                <div class="form-group">
+                    <label for="editProcessName">Nombre del Proceso:</label>
+                    <input type="text" id="editProcessName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProcessDays">Días Hábiles:</label>
+                    <input type="number" id="editProcessDays" min="0" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="editProcessDescription">Descripción:</label>
+                    <textarea id="editProcessDescription" rows="2" placeholder="Descripción del proceso"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                <button type="button" class="btn" onclick="closeProcessModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para editar festivos -->
+    <div id="holidayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Festivo</h2>
+                <span class="close" onclick="closeHolidayModal()">&times;</span>
+            </div>
+            <form id="editHolidayForm">
+                <div class="form-group">
+                    <label for="editHolidayName">Nombre del Festivo:</label>
+                    <input type="text" id="editHolidayName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editHolidayDate">Fecha:</label>
+                    <input type="date" id="editHolidayDate" required>
+                </div>
+                <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                <button type="button" class="btn" onclick="closeHolidayModal()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
