@@ -130,6 +130,12 @@
             gap: 10px;
         }
 
+        .calculate-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -347,6 +353,13 @@
             padding: 6px 15px;
             border-radius: 20px;
             font-weight: 600;
+        }
+
+        .timeline-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
         }
 
         .timeline-description {

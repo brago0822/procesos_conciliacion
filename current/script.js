@@ -90,7 +90,9 @@ function loadHolidaysFromLocalStorage() {
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('startDate').value = today;
+    var dateInput = document.getElementById('startDate');
+    dateInput.value = today;
+    dateInput.focus();
     
     // Inicializar datos
     initializeData();
@@ -118,6 +120,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('calculateBtn').addEventListener('click', function() {
         calculateTimeline();
+    });
+    // Detectar Enter y disparar el botón
+    
+    dateInput.addEventListener('keydown', (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById('calculateBtn').click();
+            // 🔄 To focus the date at starting again
+            setTimeout(() => {
+                dateInput.blur();   // quita el foco
+                dateInput.focus();  // lo vuelve a poner al inicio
+            }, 50);
+        }
     });
 });
 
@@ -550,7 +565,11 @@ function displayTimeline() {
                     <span class="timeline-title">${result.name}</span>
                     <span class="timeline-date">${formattedDate}</span>
                 </div>
-                <div class="timeline-description">${result.description}</div>
+                <div class="timeline-body">
+                    <div class="timeline-description">${result.description}</div>
+                    <span class="item-badge">+${result.days} días</span>
+                </div>
+
             </div>
         `;
     }).join('');
