@@ -297,6 +297,30 @@
             gap: 5px;
         }
 
+        .timeline-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .timeline-column {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+        }
+
+        .column-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
         .timeline {
             position: relative;
             padding-left: 30px;
@@ -385,7 +409,7 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 20px 20px 0px;
+            padding: 5px 20px 0px;
             margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
@@ -535,5 +559,18 @@
             
             .tabs-container {
                 padding: 15px;
+            }
+            
+            .timeline-columns {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .timeline-column {
+                padding: 15px;
+            }
+            
+            .column-title {
+                font-size: 1.1rem;
             }
         }

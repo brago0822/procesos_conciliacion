@@ -1,6 +1,5 @@
 // Estado de la aplicación
-let processesInicio = [];
-let processesFirme = [];
+let processes = [];
 let holidays = [];
 let currentResults = [];
 let editingHolidayIndex = -1;
@@ -29,25 +28,22 @@ const baseHolidays = [
     { name: 'Navidad', date: '2025-12-25', custom: false }
 ];
 
-// Procesos por defecto - Inicio de trámite
-const baseProcessesInicio = [
-    { id: 1, name: 'Solicitud (Sol)', description: 'Fecha de inicio del trámite', days: 0 },
-    { id: 2, name: 'Designación (Des)', description: 'Designación del responsable', days: 1 },
-    { id: 3, name: 'Aceptación (Acep)', description: 'Aceptación del encargo', days: 2 },
-    { id: 4, name: '001 - Admisión/Inadmisión', description: 'Decisión sobre admisión', days: 3 }
-];
-
-// Procesos por defecto - Trámite en firme
-const baseProcessesFirme = [
-    { id: 1, name: 'Fin de competencia del conciliador', description: 'Finalización de competencia', days: 60 },
-    { id: 2, name: 'Prórroga de competencia del conciliador', description: 'Extensión de competencia', days: 30 }
+// Procesos por defecto
+const baseProcesses = [
+    // Procesos de inicio
+    { id: 1, name: 'Solicitud (Sol)', description: 'Fecha de inicio del trámite', days: 0, type: 'inicio' },
+    { id: 2, name: 'Designación (Des)', description: 'Designación del responsable', days: 1, type: 'inicio' },
+    { id: 3, name: 'Aceptación (Acep)', description: 'Aceptación del encargo', days: 2, type: 'inicio' },
+    { id: 4, name: '001 - Admisión/Inadmisión', description: 'Decisión sobre admisión', days: 3, type: 'inicio' },
+    // Procesos en firme
+    { id: 5, name: 'Fin de competencia del conciliador', description: 'Finalización de competencia', days: 60, type: 'firme' },
+    { id: 6, name: 'Prórroga de competencia del conciliador', description: 'Extensión de competencia', days: 30, type: 'firme' }
 ];
 
 // Funciones de localStorage para procesos
 function saveProcessesToLocalStorage() {
     try {
-        localStorage.setItem('processTimeline_processesInicio', JSON.stringify(processesInicio));
-        localStorage.setItem('processTimeline_processesFirme', JSON.stringify(processesFirme));
+        localStorage.setItem('processTimeline_processes', JSON.stringify(processes));
         console.log('Procesos guardados en localStorage');
     } catch (error) {
         console.error('Error al guardar procesos:', error);
@@ -56,36 +52,17 @@ function saveProcessesToLocalStorage() {
 
 function loadProcessesFromLocalStorage() {
     try {
-        // Cargar procesos de inicio
-        const savedInicio = localStorage.getItem('processTimeline_processesInicio');
-        if (savedInicio) {
-            const loadedProcesses = JSON.parse(savedInicio);
+        const saved = localStorage.getItem('processTimeline_processes');
+        if (saved) {
+            const loadedProcesses = JSON.parse(saved);
             if (Array.isArray(loadedProcesses) && loadedProcesses.length > 0) {
-                processesInicio = loadedProcesses;
-            } else {
-                processesInicio = [...baseProcessesInicio];
+                return loadedProcesses;
             }
-        } else {
-            processesInicio = [...baseProcessesInicio];
-        }
-        
-        // Cargar procesos en firme
-        const savedFirme = localStorage.getItem('processTimeline_processesFirme');
-        if (savedFirme) {
-            const loadedProcesses = JSON.parse(savedFirme);
-            if (Array.isArray(loadedProcesses) && loadedProcesses.length > 0) {
-                processesFirme = loadedProcesses;
-            } else {
-                processesFirme = [...baseProcessesFirme];
-            }
-        } else {
-            processesFirme = [...baseProcessesFirme];
         }
     } catch (error) {
         console.error('Error al cargar procesos:', error);
-        processesInicio = [...baseProcessesInicio];
-        processesFirme = [...baseProcessesFirme];
     }
+    return [...baseProcesses];
 }
 
 // Funciones de localStorage para festivos
@@ -173,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeData() {
     // Cargar datos desde localStorage
-    loadProcessesFromLocalStorage();
+    processes = loadProcessesFromLocalStorage();
     holidays = loadHolidaysFromLocalStorage();
     
     // Validar fechas de festivos base
@@ -221,16 +198,12 @@ function handleAddProcess(type) {
         id: Date.now(),
         name,
         description: description || 'Sin descripción',
-        days
+        days,
+        type
     };
     
-    if (type === 'inicio') {
-        processesInicio.push(newProcess);
-    } else {
-        processesFirme.push(newProcess);
-    }
-    
-    saveProcessesToLocalStorage(); // Guardar en localStorage
+    processes.push(newProcess);
+    saveProcessesToLocalStorage();
     updateProcessList();
     
     // Limpiar formulario
@@ -282,14 +255,25 @@ function updateProcessList() {
 function updateProcessListForType(type) {
     const suffix = type === 'inicio' ? 'Inicio' : 'Firme';
     const container = document.getElementById(`processItems${suffix}`);
-    const processes = type === 'inicio' ? processesInicio : processesFirme;
     
-    if (processes.length === 0) {
+    if (!container) {
+        console.error(`Container not found: processItems${suffix}`);
+        return;
+    }
+    
+    const filteredProcesses = processes.filter(p => p.type === type);
+    
+    if (filteredProcesses.length === 0) {
         container.innerHTML = '<div class="no-items">No hay procesos configurados</div>';
         return;
     }
     
-    container.innerHTML = processes.map((process, index) => `
+    container.innerHTML = filteredProcesses.map((process) => {
+        const globalIndex = processes.findIndex(p => p.id === process.id);
+        const typeProcesses = processes.filter(p => p.type === type);
+        const typeIndex = typeProcesses.findIndex(p => p.id === process.id);
+        
+        return `
                 <div class="process-item">
                     <div class="item-header">
                         <span class="item-title">${process.name}</span>
@@ -297,38 +281,44 @@ function updateProcessListForType(type) {
                     </div>
                     <div class="item-description">${process.description}</div>
                     <div class="item-actions">
-                        ${index > 0 ? `<button class="btn btn-small" onclick="moveProcess(${index}, -1, '${type}')">↑</button>` : ''}
-                        ${index < processes.length - 1 ? `<button class="btn btn-small" onclick="moveProcess(${index}, 1, '${type}')">↓</button>` : ''}
-                        <button class="btn btn-warning btn-small" onclick="editProcess(${index}, '${type}')">✏️ Editar</button>
-                        <button class="btn btn-danger btn-small" onclick="removeProcess(${index}, '${type}')">🗑️ Eliminar</button>
+                        ${typeIndex > 0 ? `<button class="btn btn-small" onclick="moveProcess(${globalIndex}, -1, '${type}')">↑</button>` : ''}
+                        ${typeIndex < typeProcesses.length - 1 ? `<button class="btn btn-small" onclick="moveProcess(${globalIndex}, 1, '${type}')">↓</button>` : ''}
+                        <button class="btn btn-warning btn-small" onclick="editProcess(${globalIndex})">✏️ Editar</button>
+                        <button class="btn btn-danger btn-small" onclick="removeProcess(${globalIndex})">🗑️ Eliminar</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+    }).join('');
 }
 
-function updateProcessField(index, field, value, type) {
-    const processes = type === 'inicio' ? processesInicio : processesFirme;
+function updateProcessField(index, field, value) {
     if (processes[index]) {
         processes[index][field] = value;
-        saveProcessesToLocalStorage(); // Guardar cambios en localStorage
+        saveProcessesToLocalStorage();
     }
 }
 
 function moveProcess(index, direction, type) {
-    const processes = type === 'inicio' ? processesInicio : processesFirme;
-    const newIndex = index + direction;
-    if (newIndex >= 0 && newIndex < processes.length) {
-        [processes[index], processes[newIndex]] = [processes[newIndex], processes[index]];
-        saveProcessesToLocalStorage(); // Guardar cambios en localStorage
-        updateProcessList();
+    const typeProcesses = processes.filter(p => p.type === type);
+    const currentProcess = processes[index];
+    const currentTypeIndex = typeProcesses.findIndex(p => p.id === currentProcess.id);
+    
+    if (currentTypeIndex + direction < 0 || currentTypeIndex + direction >= typeProcesses.length) {
+        return;
     }
+    
+    const targetProcess = typeProcesses[currentTypeIndex + direction];
+    const targetIndex = processes.findIndex(p => p.id === targetProcess.id);
+    
+    [processes[index], processes[targetIndex]] = [processes[targetIndex], processes[index]];
+    saveProcessesToLocalStorage();
+    updateProcessList();
 }
 
-function removeProcess(index, type) {
+function removeProcess(index) {
     if (confirm('¿Está seguro de que desea eliminar este proceso?')) {
-        const processes = type === 'inicio' ? processesInicio : processesFirme;
         processes.splice(index, 1);
-        saveProcessesToLocalStorage(); // Guardar cambios en localStorage
+        saveProcessesToLocalStorage();
         updateProcessList();
     }
 }
@@ -393,13 +383,12 @@ function editHoliday(index) {
     document.getElementById('holidayModal').style.display = 'block';
 }
 
-function editProcess(index, type) {
-    const processes = type === 'inicio' ? processesInicio : processesFirme;
+function editProcess(index) {
     const process = processes[index];
     if (!process) return;
 
     editingProcessIndex = index;
-    editingProcessType = type;
+    editingProcessType = process.type;
     document.getElementById('editProcessName').value = process.name;
     document.getElementById('editProcessDays').value = process.days;
     document.getElementById('editProcessDescription').value = process.description;
@@ -415,8 +404,6 @@ function handleEditProcess() {
         return;
     }
     
-    const processes = editingProcessType === 'inicio' ? processesInicio : processesFirme;
-    
     // Verificar si ya existe otro proceso con el mismo nombre (excepto el que estamos editando)
     const existingProcess = processes.find((p, idx) => p.name === name && idx !== editingProcessIndex);
     if (existingProcess) {
@@ -429,7 +416,7 @@ function handleEditProcess() {
     processes[editingProcessIndex].days = days;
     processes[editingProcessIndex].description = description || 'Sin descripción';
     
-    saveProcessesToLocalStorage(); // Guardar cambios en localStorage
+    saveProcessesToLocalStorage();
     updateProcessList();
     closeProcessModal();
     
@@ -504,7 +491,7 @@ function addBusinessDays(startDate, days) {
 }
 
 function calculateTimeline() {
-    if (processesInicio.length === 0 && processesFirme.length === 0) {
+    if (processes.length === 0) {
         alert('Debe configurar al menos un proceso antes de calcular');
         return;
     }
@@ -519,22 +506,20 @@ function calculateTimeline() {
     currentResults = [];
     
     // Calcular procesos de inicio
+    const processesInicio = processes.filter(p => p.type === 'inicio');
     let currentCalculationDate = startDate;
     
     processesInicio.forEach((process, index) => {
         let processDate;
         
         if (index === 0 || process.days === 0) {
-            // CORREGIDO: Primer proceso usa la fecha de inicio exacta
             processDate = new Date(startDate);
         } else {
-            // Calcular días hábiles desde la fecha del proceso anterior
             processDate = addBusinessDays(currentCalculationDate, process.days);
         }
         
         currentResults.push({
             ...process,
-            type: 'inicio',
             date: processDate,
             dateString: processDate.toISOString().split('T')[0]
         });
@@ -542,41 +527,47 @@ function calculateTimeline() {
         currentCalculationDate = new Date(processDate);
     });
     
-    // Calcular procesos en firme (todos desde fecha de inicio)
+    // Calcular procesos en firme (secuencial entre ellos)
+    const processesFirme = processes.filter(p => p.type === 'firme');
+    let currentFirmeCalculationDate = startDate;
+    
     processesFirme.forEach((process, index) => {
         let processDate;
         
         if (process.days === 0) {
+            // Solo si el proceso tiene 0 días, usar fecha de inicio exacta
             processDate = new Date(startDate);
-        } else {
-            // Calcular días hábiles desde la fecha de inicio
+        } else if (index === 0) {
+            // Primer proceso en firme calcula sus días desde la fecha de inicio
             processDate = addBusinessDays(startDate, process.days);
+        } else {
+            // Procesos siguientes calculan desde el proceso anterior
+            processDate = addBusinessDays(currentFirmeCalculationDate, process.days);
         }
         
         currentResults.push({
             ...process,
-            type: 'firme',
             date: processDate,
             dateString: processDate.toISOString().split('T')[0]
         });
+        
+        currentFirmeCalculationDate = new Date(processDate);
     });
-    
-    // Ordenar por fecha
-    currentResults.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     displayTimeline();
     
-    // Cambiar a la sección de cálculo si no está activa
     if (!document.getElementById('calculate').classList.contains('active')) {
         showSection('calculate');
     }
 }
 
 function displayTimeline() {
-    const container = document.getElementById('timeline');
+    const containerInicio = document.getElementById('timelineInicio');
+    const containerFirme = document.getElementById('timelineFirme');
     
     if (currentResults.length === 0) {
-        container.innerHTML = '<div class="no-items">No hay resultados para mostrar</div>';
+        containerInicio.innerHTML = '<div class="no-items">No hay procesos de inicio configurados</div>';
+        containerFirme.innerHTML = '<div class="no-items">No hay procesos en firme configurados</div>';
         return;
     }
     
@@ -587,34 +578,59 @@ function displayTimeline() {
         day: 'numeric' 
     };
     
-    container.innerHTML = currentResults.map(result => {
-        const formattedDate = result.date.toLocaleDateString('es-ES', formatOptions);
-        const typeClass = result.type === 'firme' ? 'firme' : 'inicio';
-        const typeLabel = result.type === 'firme' ? 'Trámite en Firme' : 'Inicio de Trámite';
-        
-        return `
-            <div class="timeline-item ${typeClass}">
-                <div class="timeline-header">
-                    <span class="timeline-title">${result.name}</span>
-                    <span class="timeline-date">${formattedDate}</span>
-                </div>
-                <div class="timeline-body">
-                    <div class="timeline-description">${result.description}</div>
-                    <div class="timeline-badges">
-                        <span class="item-badge type-badge ${typeClass}">${typeLabel}</span>
+    // Filtrar resultados por tipo
+    const resultsInicio = currentResults.filter(r => r.type === 'inicio');
+    const resultsFirme = currentResults.filter(r => r.type === 'firme');
+    
+    // Mostrar procesos de inicio
+    if (resultsInicio.length === 0) {
+        containerInicio.innerHTML = '<div class="no-items">No hay procesos de inicio configurados</div>';
+    } else {
+        containerInicio.innerHTML = resultsInicio.map(result => {
+            const formattedDate = result.date.toLocaleDateString('es-ES', formatOptions);
+            
+            return `
+                <div class="timeline-item inicio">
+                    <div class="timeline-header">
+                        <span class="timeline-title">${result.name}</span>
+                        <span class="timeline-date">${formattedDate}</span>
+                    </div>
+                    <div class="timeline-body">
+                        <div class="timeline-description">${result.description}</div>
                         <span class="item-badge">+${result.days} días</span>
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
+    
+    // Mostrar procesos en firme
+    if (resultsFirme.length === 0) {
+        containerFirme.innerHTML = '<div class="no-items">No hay procesos en firme configurados</div>';
+    } else {
+        containerFirme.innerHTML = resultsFirme.map(result => {
+            const formattedDate = result.date.toLocaleDateString('es-ES', formatOptions);
+            
+            return `
+                <div class="timeline-item firme">
+                    <div class="timeline-header">
+                        <span class="timeline-title">${result.name}</span>
+                        <span class="timeline-date">${formattedDate}</span>
+                    </div>
+                    <div class="timeline-body">
+                        <div class="timeline-description">${result.description}</div>
+                        <span class="item-badge">+${result.days} días</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 // Funciones adicionales para manejo de datos
 function resetProcesses() {
     if (confirm('¿Está seguro de que desea restaurar los procesos por defecto? Se perderán todos los cambios.')) {
-        processesInicio = [...baseProcessesInicio];
-        processesFirme = [...baseProcessesFirme];
+        processes = [...baseProcesses];
         saveProcessesToLocalStorage();
         updateProcessList();
         alert('Procesos restaurados por defecto');
@@ -632,8 +648,7 @@ function resetHolidays() {
 
 function exportData() {
     const data = {
-        processesInicio: processesInicio,
-        processesFirme: processesFirme,
+        processes: processes,
         customHolidays: holidays.filter(h => h.custom === true),
         exportDate: new Date().toISOString()
     };
@@ -664,6 +679,14 @@ function switchProcessTab(tabType) {
         content.classList.remove('active');
     });
     document.getElementById(`tab${tabType === 'inicio' ? 'Inicio' : 'Firme'}Content`).classList.add('active');
+}
+
+// Función de debug para limpiar localStorage
+function clearLocalStorage() {
+    localStorage.removeItem('processTimeline_processes');
+    localStorage.removeItem('processTimeline_holidays');
+    console.log('LocalStorage limpiado');
+    location.reload();
 }
 
 // Cerrar modal al hacer clic fuera de él
