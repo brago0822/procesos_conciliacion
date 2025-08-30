@@ -133,8 +133,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('calculateBtn').addEventListener('click', function() {
         calculateTimeline();
     });
-    // Detectar Enter y disparar el botón
     
+    // Mobile menu functionality
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    
+    mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    mobileOverlay.addEventListener('click', closeMobileMenu);
+    
+    // Close sidebar when clicking on nav items (mobile)
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        });
+    });
+    
+    // Detectar Enter y disparar el botón
     dateInput.addEventListener('keydown', (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
@@ -687,6 +704,44 @@ function clearLocalStorage() {
     localStorage.removeItem('processTimeline_holidays');
     console.log('LocalStorage limpiado');
     location.reload();
+}
+
+// Mobile menu functions
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const isActive = sidebar.classList.contains('active');
+    
+    if (isActive) {
+        closeMobileMenu();
+    } else {
+        openMobileMenu();
+    }
+}
+
+function openMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    
+    mobileMenuBtn.classList.add('active');
+    sidebar.classList.add('active');
+    mobileOverlay.classList.add('active');
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    
+    mobileMenuBtn.classList.remove('active');
+    sidebar.classList.remove('active');
+    mobileOverlay.classList.remove('active');
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
 }
 
 // Cerrar modal al hacer clic fuera de él
