@@ -380,6 +380,77 @@
             gap: 15px;
         }
 
+        /* Styles for Tabs */
+        .tabs-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 20px 0px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e5e9;
+            margin-bottom: 0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-right: 5px;
+        }
+
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #333;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Timeline item styles for different types */
+        .timeline-item.firme::before {
+            background: #ff6b6b;
+            box-shadow: 0 0 0 4px white, 0 0 0 6px #ff6b6b;
+        }
+
+        .timeline-badges {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .type-badge.firme {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+
+        .type-badge.inicio {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -448,5 +519,21 @@
             
             .grid-2 {
                 grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                border-bottom: none;
+            }
+            
+            .tab-button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 5px;
+                border-radius: 10px;
+            }
+            
+            .tabs-container {
+                padding: 15px;
             }
         }

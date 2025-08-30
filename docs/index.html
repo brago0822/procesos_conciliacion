@@ -39,32 +39,77 @@
                 <p class="page-subtitle">Define y organiza los procesos de tu flujo de trabajo</p>
             </div>
 
-            <div class="panel">
-                <h2>➕ Agregar Nuevo Proceso</h2>
-                <form id="processForm">
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label for="processName">Nombre del Proceso:</label>
-                            <input type="text" id="processName" placeholder="Ej: Designación" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="processDays">Días Hábiles:</label>
-                            <input type="number" id="processDays" min="0" value="1" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="processDescription">Descripción:</label>
-                        <textarea id="processDescription" rows="2" placeholder="Descripción del proceso"></textarea>
-                    </div>
-                    <button type="submit" class="btn">Agregar Proceso</button>
-                </form>
+            <!-- Tabs de tipos de procesos -->
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-button active" onclick="switchProcessTab('inicio')" id="tabInicio">
+                        📅 Inicio de Trámite
+                    </button>
+                    <button class="tab-button" onclick="switchProcessTab('firme')" id="tabFirme">
+                        ⚖️ Trámite en Firme
+                    </button>
+                </div>
             </div>
 
-            <div class="panel">
-                <h2>📋 Procesos Configurados</h2>
-                <!--<div id="processTableContainer">-->
-                <div id="processItems">
-                    <div class="no-items">No hay procesos configurados</div>
+            <!-- Tab de Inicio de Trámite -->
+            <div id="tabInicioContent" class="tab-content active">
+                <div class="panel">
+                    <h2>➕ Agregar Nuevo Proceso - Inicio de Trámite</h2>
+                    <form id="processFormInicio">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="processNameInicio">Nombre del Proceso:</label>
+                                <input type="text" id="processNameInicio" placeholder="Ej: Designación" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="processDaysInicio">Días Hábiles:</label>
+                                <input type="number" id="processDaysInicio" min="0" value="1" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="processDescriptionInicio">Descripción:</label>
+                            <textarea id="processDescriptionInicio" rows="2" placeholder="Descripción del proceso"></textarea>
+                        </div>
+                        <button type="submit" class="btn">Agregar Proceso</button>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h2>📋 Procesos de Inicio de Trámite</h2>
+                    <div id="processItemsInicio">
+                        <div class="no-items">No hay procesos configurados</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab de Trámite en Firme -->
+            <div id="tabFirmeContent" class="tab-content">
+                <div class="panel">
+                    <h2>➕ Agregar Nuevo Proceso - Trámite en Firme</h2>
+                    <form id="processFormFirme">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="processNameFirme">Nombre del Proceso:</label>
+                                <input type="text" id="processNameFirme" placeholder="Ej: Fin de competencia" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="processDaysFirme">Días Hábiles:</label>
+                                <input type="number" id="processDaysFirme" min="0" value="1" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="processDescriptionFirme">Descripción:</label>
+                            <textarea id="processDescriptionFirme" rows="2" placeholder="Descripción del proceso"></textarea>
+                        </div>
+                        <button type="submit" class="btn">Agregar Proceso</button>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h2>⚖️ Procesos de Trámite en Firme</h2>
+                    <div id="processItemsFirme">
+                        <div class="no-items">No hay procesos configurados</div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,8 +1,12 @@
 // Estado de la aplicación
-let processes = [];
+let processesInicio = [];
+let processesFirme = [];
 let holidays = [];
 let currentResults = [];
 let editingHolidayIndex = -1;
+let editingProcessIndex = -1;
+let editingProcessType = 'inicio';
+let currentProcessTab = 'inicio';
 
 // Festivos oficiales de Colombia 2025 - CORREGIDOS según fuentes oficiales
 const baseHolidays = [
@@ -25,18 +29,25 @@ const baseHolidays = [
     { name: 'Navidad', date: '2025-12-25', custom: false }
 ];
 
-// Procesos por defecto
-const baseProcesses = [
+// Procesos por defecto - Inicio de trámite
+const baseProcessesInicio = [
     { id: 1, name: 'Solicitud (Sol)', description: 'Fecha de inicio del trámite', days: 0 },
     { id: 2, name: 'Designación (Des)', description: 'Designación del responsable', days: 1 },
     { id: 3, name: 'Aceptación (Acep)', description: 'Aceptación del encargo', days: 2 },
     { id: 4, name: '001 - Admisión/Inadmisión', description: 'Decisión sobre admisión', days: 3 }
 ];
 
+// Procesos por defecto - Trámite en firme
+const baseProcessesFirme = [
+    { id: 1, name: 'Fin de competencia del conciliador', description: 'Finalización de competencia', days: 60 },
+    { id: 2, name: 'Prórroga de competencia del conciliador', description: 'Extensión de competencia', days: 30 }
+];
+
 // Funciones de localStorage para procesos
 function saveProcessesToLocalStorage() {
     try {
-        localStorage.setItem('processTimeline_processes', JSON.stringify(processes));
+        localStorage.setItem('processTimeline_processesInicio', JSON.stringify(processesInicio));
+        localStorage.setItem('processTimeline_processesFirme', JSON.stringify(processesFirme));
         console.log('Procesos guardados en localStorage');
     } catch (error) {
         console.error('Error al guardar procesos:', error);
@@ -45,17 +56,36 @@ function saveProcessesToLocalStorage() {
 
 function loadProcessesFromLocalStorage() {
     try {
-        const saved = localStorage.getItem('processTimeline_processes');
-        if (saved) {
-            const loadedProcesses = JSON.parse(saved);
+        // Cargar procesos de inicio
+        const savedInicio = localStorage.getItem('processTimeline_processesInicio');
+        if (savedInicio) {
+            const loadedProcesses = JSON.parse(savedInicio);
             if (Array.isArray(loadedProcesses) && loadedProcesses.length > 0) {
-                return loadedProcesses;
+                processesInicio = loadedProcesses;
+            } else {
+                processesInicio = [...baseProcessesInicio];
             }
+        } else {
+            processesInicio = [...baseProcessesInicio];
+        }
+        
+        // Cargar procesos en firme
+        const savedFirme = localStorage.getItem('processTimeline_processesFirme');
+        if (savedFirme) {
+            const loadedProcesses = JSON.parse(savedFirme);
+            if (Array.isArray(loadedProcesses) && loadedProcesses.length > 0) {
+                processesFirme = loadedProcesses;
+            } else {
+                processesFirme = [...baseProcessesFirme];
+            }
+        } else {
+            processesFirme = [...baseProcessesFirme];
         }
     } catch (error) {
         console.error('Error al cargar procesos:', error);
+        processesInicio = [...baseProcessesInicio];
+        processesFirme = [...baseProcessesFirme];
     }
-    return [...baseProcesses]; // Retorna procesos por defecto si no hay guardados
 }
 
 // Funciones de localStorage para festivos
@@ -98,9 +128,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeData();
     
     // Event listeners - CORREGIDOS
-    document.getElementById('processForm').addEventListener('submit', function(e) {
+    document.getElementById('processFormInicio').addEventListener('submit', function(e) {
         e.preventDefault();
-        handleAddProcess();
+        handleAddProcess('inicio');
+    });
+    
+    document.getElementById('processFormFirme').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleAddProcess('firme');
     });
     
     document.getElementById('holidayForm').addEventListener('submit', function(e) {
@@ -138,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeData() {
     // Cargar datos desde localStorage
-    processes = loadProcessesFromLocalStorage();
+    loadProcessesFromLocalStorage();
     holidays = loadHolidaysFromLocalStorage();
     
     // Validar fechas de festivos base
@@ -171,10 +206,11 @@ function showSection(sectionId) {
     }
 }
 
-function handleAddProcess() {
-    const name = document.getElementById('processName').value.trim();
-    const description = document.getElementById('processDescription').value.trim();
-    const days = parseInt(document.getElementById('processDays').value);
+function handleAddProcess(type) {
+    const suffix = type === 'inicio' ? 'Inicio' : 'Firme';
+    const name = document.getElementById(`processName${suffix}`).value.trim();
+    const description = document.getElementById(`processDescription${suffix}`).value.trim();
+    const days = parseInt(document.getElementById(`processDays${suffix}`).value);
     
     if (!name) {
         alert('Por favor ingrese un nombre para el proceso');
@@ -188,13 +224,18 @@ function handleAddProcess() {
         days
     };
     
-    processes.push(newProcess);
+    if (type === 'inicio') {
+        processesInicio.push(newProcess);
+    } else {
+        processesFirme.push(newProcess);
+    }
+    
     saveProcessesToLocalStorage(); // Guardar en localStorage
     updateProcessList();
     
     // Limpiar formulario
-    document.getElementById('processForm').reset();
-    document.getElementById('processDays').value = 1;
+    document.getElementById(`processForm${suffix}`).reset();
+    document.getElementById(`processDays${suffix}`).value = 1;
     
     alert('Proceso agregado exitosamente');
 }
@@ -234,59 +275,20 @@ function handleAddHoliday() {
 }
 
 function updateProcessList() {
-    //const container = document.getElementById('processTableContainer');
-    const container = document.getElementById('processItems');
+    updateProcessListForType('inicio');
+    updateProcessListForType('firme');
+}
+
+function updateProcessListForType(type) {
+    const suffix = type === 'inicio' ? 'Inicio' : 'Firme';
+    const container = document.getElementById(`processItems${suffix}`);
+    const processes = type === 'inicio' ? processesInicio : processesFirme;
     
     if (processes.length === 0) {
         container.innerHTML = '<div class="no-items">No hay procesos configurados</div>';
         return;
     }
     
-    /*let tableHTML = `
-        <table class="process-table">
-            <thead>
-                <tr>
-                    <th style="width: 25%">Nombre</th>
-                    <th style="width: 35%">Descripción</th>
-                    <th style="width: 15%">Días</th>
-                    <th style="width: 25%">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    
-    processes.forEach((process, index) => {
-        tableHTML += `
-            <tr>
-                <td>
-                    <input type="text" value="${process.name}" 
-                           onchange="updateProcessField(${index}, 'name', this.value)"
-                           style="width: 100%;">
-                </td>
-                <td>
-                    <textarea rows="2" 
-                              onchange="updateProcessField(${index}, 'description', this.value)"
-                              style="width: 100%; resize: vertical;">${process.description}</textarea>
-                </td>
-                <td>
-                    <input type="number" min="0" value="${process.days}" 
-                           onchange="updateProcessField(${index}, 'days', parseInt(this.value))"
-                           style="width: 100%;">
-                </td>
-                <td>
-                    <div class="item-actions">
-                        ${index > 0 ? `<button class="btn btn-small" onclick="moveProcess(${index}, -1)">↑</button>` : ''}
-                        ${index < processes.length - 1 ? `<button class="btn btn-small" onclick="moveProcess(${index}, 1)">↓</button>` : ''}
-                        <button class="btn btn-danger btn-small" onclick="removeProcess(${index})">🗑️</button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-    
-    tableHTML += '</tbody></table>';
-    container.innerHTML = tableHTML;*/
     container.innerHTML = processes.map((process, index) => `
                 <div class="process-item">
                     <div class="item-header">
@@ -295,26 +297,25 @@ function updateProcessList() {
                     </div>
                     <div class="item-description">${process.description}</div>
                     <div class="item-actions">
-                        ${index > 0 ? `<button class="btn btn-small" onclick="moveProcess(${index}, -1)">↑</button>` : ''}
-                        ${index < processes.length - 1 ? `<button class="btn btn-small" onclick="moveProcess(${index}, 1)">↓</button>` : ''}
-
-                    
-                        <button class="btn btn-warning btn-small" onclick="editProcess(${index})">✏️ Editar</button>
-                        <button class="btn btn-danger btn-small" onclick="removeProcess(${index})">🗑️ Eliminar</button>
-                        <!--<button class="btn btn-danger btn-small" onclick="removeProcess(${index})">🗑️</button>-->
+                        ${index > 0 ? `<button class="btn btn-small" onclick="moveProcess(${index}, -1, '${type}')">↑</button>` : ''}
+                        ${index < processes.length - 1 ? `<button class="btn btn-small" onclick="moveProcess(${index}, 1, '${type}')">↓</button>` : ''}
+                        <button class="btn btn-warning btn-small" onclick="editProcess(${index}, '${type}')">✏️ Editar</button>
+                        <button class="btn btn-danger btn-small" onclick="removeProcess(${index}, '${type}')">🗑️ Eliminar</button>
                     </div>
                 </div>
             `).join('');
 }
 
-function updateProcessField(index, field, value) {
+function updateProcessField(index, field, value, type) {
+    const processes = type === 'inicio' ? processesInicio : processesFirme;
     if (processes[index]) {
         processes[index][field] = value;
         saveProcessesToLocalStorage(); // Guardar cambios en localStorage
     }
 }
 
-function moveProcess(index, direction) {
+function moveProcess(index, direction, type) {
+    const processes = type === 'inicio' ? processesInicio : processesFirme;
     const newIndex = index + direction;
     if (newIndex >= 0 && newIndex < processes.length) {
         [processes[index], processes[newIndex]] = [processes[newIndex], processes[index]];
@@ -323,8 +324,9 @@ function moveProcess(index, direction) {
     }
 }
 
-function removeProcess(index) {
+function removeProcess(index, type) {
     if (confirm('¿Está seguro de que desea eliminar este proceso?')) {
+        const processes = type === 'inicio' ? processesInicio : processesFirme;
         processes.splice(index, 1);
         saveProcessesToLocalStorage(); // Guardar cambios en localStorage
         updateProcessList();
@@ -391,11 +393,13 @@ function editHoliday(index) {
     document.getElementById('holidayModal').style.display = 'block';
 }
 
-function editProcess(index) {
+function editProcess(index, type) {
+    const processes = type === 'inicio' ? processesInicio : processesFirme;
     const process = processes[index];
     if (!process) return;
 
     editingProcessIndex = index;
+    editingProcessType = type;
     document.getElementById('editProcessName').value = process.name;
     document.getElementById('editProcessDays').value = process.days;
     document.getElementById('editProcessDescription').value = process.description;
@@ -410,6 +414,8 @@ function handleEditProcess() {
         alert('Por favor complete todos los campos correctamente');
         return;
     }
+    
+    const processes = editingProcessType === 'inicio' ? processesInicio : processesFirme;
     
     // Verificar si ya existe otro proceso con el mismo nombre (excepto el que estamos editando)
     const existingProcess = processes.find((p, idx) => p.name === name && idx !== editingProcessIndex);
@@ -467,6 +473,7 @@ function closeHolidayModal() {
 function closeProcessModal() {
     document.getElementById('processModal').style.display = 'none';
     editingProcessIndex = -1;
+    editingProcessType = 'inicio';
 }
 
 function isBusinessDay(date) {
@@ -497,7 +504,7 @@ function addBusinessDays(startDate, days) {
 }
 
 function calculateTimeline() {
-    if (processes.length === 0) {
+    if (processesInicio.length === 0 && processesFirme.length === 0) {
         alert('Debe configurar al menos un proceso antes de calcular');
         return;
     }
@@ -511,9 +518,10 @@ function calculateTimeline() {
     const startDate = DateHelper.parseBogotaDate(startDateStr);
     currentResults = [];
     
+    // Calcular procesos de inicio
     let currentCalculationDate = startDate;
     
-    processes.forEach((process, index) => {
+    processesInicio.forEach((process, index) => {
         let processDate;
         
         if (index === 0 || process.days === 0) {
@@ -526,12 +534,35 @@ function calculateTimeline() {
         
         currentResults.push({
             ...process,
+            type: 'inicio',
             date: processDate,
             dateString: processDate.toISOString().split('T')[0]
         });
         
         currentCalculationDate = new Date(processDate);
     });
+    
+    // Calcular procesos en firme (todos desde fecha de inicio)
+    processesFirme.forEach((process, index) => {
+        let processDate;
+        
+        if (process.days === 0) {
+            processDate = new Date(startDate);
+        } else {
+            // Calcular días hábiles desde la fecha de inicio
+            processDate = addBusinessDays(startDate, process.days);
+        }
+        
+        currentResults.push({
+            ...process,
+            type: 'firme',
+            date: processDate,
+            dateString: processDate.toISOString().split('T')[0]
+        });
+    });
+    
+    // Ordenar por fecha
+    currentResults.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     displayTimeline();
     
@@ -558,18 +589,22 @@ function displayTimeline() {
     
     container.innerHTML = currentResults.map(result => {
         const formattedDate = result.date.toLocaleDateString('es-ES', formatOptions);
+        const typeClass = result.type === 'firme' ? 'firme' : 'inicio';
+        const typeLabel = result.type === 'firme' ? 'Trámite en Firme' : 'Inicio de Trámite';
         
         return `
-            <div class="timeline-item">
+            <div class="timeline-item ${typeClass}">
                 <div class="timeline-header">
                     <span class="timeline-title">${result.name}</span>
                     <span class="timeline-date">${formattedDate}</span>
                 </div>
                 <div class="timeline-body">
                     <div class="timeline-description">${result.description}</div>
-                    <span class="item-badge">+${result.days} días</span>
+                    <div class="timeline-badges">
+                        <span class="item-badge type-badge ${typeClass}">${typeLabel}</span>
+                        <span class="item-badge">+${result.days} días</span>
+                    </div>
                 </div>
-
             </div>
         `;
     }).join('');
@@ -578,7 +613,8 @@ function displayTimeline() {
 // Funciones adicionales para manejo de datos
 function resetProcesses() {
     if (confirm('¿Está seguro de que desea restaurar los procesos por defecto? Se perderán todos los cambios.')) {
-        processes = [...baseProcesses];
+        processesInicio = [...baseProcessesInicio];
+        processesFirme = [...baseProcessesFirme];
         saveProcessesToLocalStorage();
         updateProcessList();
         alert('Procesos restaurados por defecto');
@@ -596,7 +632,8 @@ function resetHolidays() {
 
 function exportData() {
     const data = {
-        processes: processes,
+        processesInicio: processesInicio,
+        processesFirme: processesFirme,
         customHolidays: holidays.filter(h => h.custom === true),
         exportDate: new Date().toISOString()
     };
@@ -610,6 +647,23 @@ function exportData() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+}
+
+// Función para cambiar entre tabs de procesos
+function switchProcessTab(tabType) {
+    currentProcessTab = tabType;
+    
+    // Actualizar botones de tabs
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`tab${tabType === 'inicio' ? 'Inicio' : 'Firme'}`).classList.add('active');
+    
+    // Actualizar contenido de tabs
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`tab${tabType === 'inicio' ? 'Inicio' : 'Firme'}Content`).classList.add('active');
 }
 
 // Cerrar modal al hacer clic fuera de él
