@@ -53,10 +53,13 @@
             <div class="tabs-container">
                 <div class="tabs">
                     <button class="tab-button active" onclick="switchProcessTab('inicio')" id="tabInicio">
-                        📅 Inicio de Trámite
+                        📅 Insolvencia - Inicio de Trámite
                     </button>
                     <button class="tab-button" onclick="switchProcessTab('firme')" id="tabFirme">
-                        ⚖️ Trámite en Firme
+                        ⚖️ Insolvencia - Trámite en Firme
+                    </button>
+                    <button class="tab-button" onclick="switchProcessTab('conciliacion')" id="tabConciliacion">
+                        🤝 Conciliación
                     </button>
                 </div>
             </div>
@@ -122,6 +125,37 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tab de Conciliación -->
+            <div id="tabConciliacionContent" class="tab-content">
+                <div class="panel">
+                    <h2>➕ Agregar Nuevo Proceso - Conciliación</h2>
+                    <form id="processFormConciliacion">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="processNameConciliacion">Nombre del Proceso:</label>
+                                <input type="text" id="processNameConciliacion" placeholder="Ej: Audiencia de conciliación" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="processDaysConciliacion">Días Hábiles:</label>
+                                <input type="number" id="processDaysConciliacion" min="0" value="1" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="processDescriptionConciliacion">Descripción:</label>
+                            <textarea id="processDescriptionConciliacion" rows="2" placeholder="Descripción del proceso"></textarea>
+                        </div>
+                        <button type="submit" class="btn">Agregar Proceso</button>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h2>🤝 Procesos de Conciliación</h2>
+                    <div id="processItemsConciliacion">
+                        <div class="no-items">No hay procesos configurados</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Sección de Festivos -->
@@ -162,47 +196,87 @@
                 <h1 class="page-title">Cálculo de Fechas</h1>
                 <p class="page-subtitle">Genera el cronograma automático de tu proceso</p>
             </div>
-            <div class="panel">
-                <h2>📅 Configuración del Cálculo</h2>
-                <div class="calculation-sections">
-                    <div class="calculation-section">
-                        <h3 class="section-title">📅 Inicio de Trámite</h3>
-                        <div class="form-group">
-                            <label for="startDate">Fecha de Inicio del Trámite:</label>
-                            <input type="date" id="startDate" required>
+            <!-- Submenús de tipos de proceso -->
+            <div class="process-type-tabs">
+                <button class="process-type-tab active" onclick="switchCalculationTab('insolvencia')" id="calculationTabInsolvencia">
+                    ⚖️ Insolvencia
+                </button>
+                <button class="process-type-tab" onclick="switchCalculationTab('conciliacion')" id="calculationTabConciliacion">
+                    🤝 Conciliación
+                </button>
+            </div>
+
+            <!-- Panel de Insolvencia -->
+            <div id="insolvenciaCalculationPanel" class="calculation-panel active">
+                <div class="panel">
+                    <h2>📅 Configuración del Cálculo - Insolvencia</h2>
+                    <div class="calculation-sections">
+                        <div class="calculation-section">
+                            <h3 class="section-title">📅 Inicio de Trámite</h3>
+                            <div class="form-group">
+                                <label for="startDate">Fecha de Inicio del Trámite:</label>
+                                <input type="date" id="startDate" required>
+                            </div>
+                            <button id="calculateInicioBtn" class="btn btn-success">Calcular Procesos de Inicio</button>
                         </div>
-                        <button id="calculateInicioBtn" class="btn btn-success">Calcular Procesos de Inicio</button>
+                        
+                        <div class="calculation-section">
+                            <h3 class="section-title">⚖️ Trámite en Firme</h3>
+                            <div class="form-group">
+                                <label for="firmeDate">Fecha de Trámite en Firme:</label>
+                                <input type="date" id="firmeDate" required>
+                            </div>
+                            <button id="calculateFirmeBtn" class="btn btn-warning">Calcular Procesos en Firme</button>
+                        </div>
                     </div>
                     
-                    <div class="calculation-section">
-                        <h3 class="section-title">⚖️ Trámite en Firme</h3>
-                        <div class="form-group">
-                            <label for="firmeDate">Fecha de Trámite en Firme:</label>
-                            <input type="date" id="firmeDate" required>
-                        </div>
-                        <button id="calculateFirmeBtn" class="btn btn-warning">Calcular Procesos en Firme</button>
+                    <div class="calculation-controls">
+                        <button id="calculateAllInsolvenciaBtn" class="btn btn-primary">Calcular Toda la Insolvencia</button>
+                        <button id="clearInsolvenciaBtn" class="btn btn-secondary">Limpiar Insolvencia</button>
                     </div>
                 </div>
-                
-                <div class="calculation-controls">
-                    <button id="calculateAllBtn" class="btn btn-primary">Calcular Todo el Cronograma</button>
-                    <button id="clearResultsBtn" class="btn btn-secondary">Limpiar Resultados</button>
+            </div>
+
+            <!-- Panel de Conciliación -->
+            <div id="conciliacionCalculationPanel" class="calculation-panel">
+                <div class="panel">
+                    <h2>🤝 Configuración del Cálculo - Conciliación</h2>
+                    <div class="calculation-sections">
+                        <div class="calculation-section">
+                            <h3 class="section-title">🤝 Proceso de Conciliación</h3>
+                            <div class="form-group">
+                                <label for="conciliacionDate">Fecha de Inicio de Conciliación:</label>
+                                <input type="date" id="conciliacionDate" required>
+                            </div>
+                            <button id="calculateConciliacionBtn" class="btn btn-info">Calcular Procesos de Conciliación</button>
+                        </div>
+                    </div>
+                    
+                    <div class="calculation-controls">
+                        <button id="clearConciliacionBtn" class="btn btn-secondary">Limpiar Conciliación</button>
+                    </div>
                 </div>
             </div>
 
             <div class="panel">
                 <h2>📋 Cronograma del Proceso</h2>
-                <div class="timeline-columns">
-                    <div class="timeline-column">
-                        <h3 class="column-title">📅 Inicio de Trámite</h3>
+                <div id="timelineContainer" class="timeline-columns">
+                    <div class="timeline-column insolvencia-column" id="columnInicio">
+                        <h3 class="column-title">📅 Insolvencia - Inicio</h3>
                         <div id="timelineInicio" class="timeline">
                             <div class="no-items">Configure los procesos de inicio y calcule las fechas</div>
                         </div>
                     </div>
-                    <div class="timeline-column">
-                        <h3 class="column-title">⚖️ Trámite en Firme</h3>
+                    <div class="timeline-column insolvencia-column" id="columnFirme">
+                        <h3 class="column-title">⚖️ Insolvencia - Firme</h3>
                         <div id="timelineFirme" class="timeline">
                             <div class="no-items">Configure los procesos en firme y calcule las fechas</div>
+                        </div>
+                    </div>
+                    <div class="timeline-column conciliacion-column" id="columnConciliacion">
+                        <h3 class="column-title">🤝 Conciliación</h3>
+                        <div id="timelineConciliacion" class="timeline">
+                            <div class="no-items">Configure los procesos de conciliación y calcule las fechas</div>
                         </div>
                     </div>
                 </div>

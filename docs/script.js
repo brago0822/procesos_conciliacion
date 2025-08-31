@@ -6,6 +6,7 @@ let editingHolidayIndex = -1;
 let editingProcessIndex = -1;
 let editingProcessType = 'inicio';
 let currentProcessTab = 'inicio';
+let currentCalculationTab = 'insolvencia';
 
 // Festivos oficiales de Colombia 2025-2026 según fuentes oficiales
 const baseHolidays = [
@@ -51,14 +52,19 @@ const baseHolidays = [
 
 // Procesos por defecto
 const baseProcesses = [
-    // Procesos de inicio
+    // Procesos de inicio (Insolvencia)
     { id: 1, name: 'Solicitud (Sol)', description: 'Fecha de inicio del trámite', days: 0, type: 'inicio' },
     { id: 2, name: 'Designación (Des)', description: 'Designación del responsable', days: 1, type: 'inicio' },
     { id: 3, name: 'Aceptación (Acep)', description: 'Aceptación del encargo', days: 2, type: 'inicio' },
     { id: 4, name: '001 - Admisión/Inadmisión', description: 'Decisión sobre admisión', days: 3, type: 'inicio' },
-    // Procesos en firme
+    // Procesos en firme (Insolvencia)
     { id: 5, name: 'Fin de competencia del conciliador', description: 'Finalización de competencia', days: 60, type: 'firme' },
-    { id: 6, name: 'Prórroga de competencia del conciliador', description: 'Extensión de competencia', days: 30, type: 'firme' }
+    { id: 6, name: 'Prórroga de competencia del conciliador', description: 'Extensión de competencia', days: 30, type: 'firme' },
+    // Procesos de Conciliación
+    { id: 7, name: 'Solicitud de conciliación', description: 'Fecha de radicación de la solicitud', days: 0, type: 'conciliacion' },
+    { id: 8, name: 'Citación a audiencia', description: 'Citación de las partes a audiencia', days: 3, type: 'conciliacion' },
+    { id: 9, name: 'Audiencia de conciliación', description: 'Realización de la audiencia', days: 15, type: 'conciliacion' },
+    { id: 10, name: 'Elaboración de acta', description: 'Elaboración del acta final', days: 3, type: 'conciliacion' }
 ];
 
 // Funciones de localStorage para procesos
@@ -77,6 +83,13 @@ function loadProcessesFromLocalStorage() {
         if (saved) {
             const loadedProcesses = JSON.parse(saved);
             if (Array.isArray(loadedProcesses) && loadedProcesses.length > 0) {
+                // Verificar si los procesos de conciliación existen
+                const hasConciliacion = loadedProcesses.some(p => p.type === 'conciliacion');
+                if (!hasConciliacion) {
+                    // Agregar procesos de conciliación por defecto si no existen
+                    const conciliacionProcesses = baseProcesses.filter(p => p.type === 'conciliacion');
+                    return [...loadedProcesses, ...conciliacionProcesses];
+                }
                 return loadedProcesses;
             }
         }
@@ -136,6 +149,11 @@ document.addEventListener('DOMContentLoaded', function() {
         handleAddProcess('firme');
     });
     
+    document.getElementById('processFormConciliacion').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleAddProcess('conciliacion');
+    });
+    
     document.getElementById('holidayForm').addEventListener('submit', function(e) {
         e.preventDefault();
         handleAddHoliday();
@@ -151,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         handleEditProcess();
     });
 
-    // Event listeners para los nuevos botones de cálculo
+    // Event listeners para los botones de cálculo
     document.getElementById('calculateInicioBtn').addEventListener('click', function() {
         calculateTimelineInicio();
     });
@@ -160,12 +178,20 @@ document.addEventListener('DOMContentLoaded', function() {
         calculateTimelineFirme();
     });
     
-    document.getElementById('calculateAllBtn').addEventListener('click', function() {
-        calculateAllTimeline();
+    document.getElementById('calculateConciliacionBtn').addEventListener('click', function() {
+        calculateTimelineConciliacion();
     });
     
-    document.getElementById('clearResultsBtn').addEventListener('click', function() {
-        clearResults();
+    document.getElementById('calculateAllInsolvenciaBtn').addEventListener('click', function() {
+        calculateAllInsolvencia();
+    });
+    
+    document.getElementById('clearInsolvenciaBtn').addEventListener('click', function() {
+        clearInsolvenciaResults();
+    });
+    
+    document.getElementById('clearConciliacionBtn').addEventListener('click', function() {
+        clearConciliacionResults();
     });
     
     // Mobile menu functionality
@@ -208,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 50);
         }
     });
+    displayTimeline();
 });
 
 function initializeData() {
@@ -246,7 +273,11 @@ function showSection(sectionId) {
 }
 
 function handleAddProcess(type) {
-    const suffix = type === 'inicio' ? 'Inicio' : 'Firme';
+    let suffix;
+    if (type === 'inicio') suffix = 'Inicio';
+    else if (type === 'firme') suffix = 'Firme';
+    else if (type === 'conciliacion') suffix = 'Conciliacion';
+    
     const name = document.getElementById(`processName${suffix}`).value.trim();
     const description = document.getElementById(`processDescription${suffix}`).value.trim();
     const days = parseInt(document.getElementById(`processDays${suffix}`).value);
@@ -312,10 +343,15 @@ function handleAddHoliday() {
 function updateProcessList() {
     updateProcessListForType('inicio');
     updateProcessListForType('firme');
+    updateProcessListForType('conciliacion');
 }
 
 function updateProcessListForType(type) {
-    const suffix = type === 'inicio' ? 'Inicio' : 'Firme';
+    let suffix;
+    if (type === 'inicio') suffix = 'Inicio';
+    else if (type === 'firme') suffix = 'Firme';
+    else if (type === 'conciliacion') suffix = 'Conciliacion';
+    
     const container = document.getElementById(`processItems${suffix}`);
     
     if (!container) {
@@ -640,15 +676,63 @@ function calculateTimelineFirme() {
     showCalculateSection();
 }
 
-// Función para calcular ambos tipos de procesos
-function calculateAllTimeline() {
+// Función para calcular procesos de conciliación
+function calculateTimelineConciliacion() {
+    const processesConciliacion = processes.filter(p => p.type === 'conciliacion');
+    if (processesConciliacion.length === 0) {
+        alert('No hay procesos de conciliación configurados');
+        return;
+    }
+    
+    const conciliacionDateStr = document.getElementById('conciliacionDate').value;
+    if (!conciliacionDateStr) {
+        alert('Por favor ingrese la fecha de inicio de conciliación');
+        return;
+    }
+    
+    const conciliacionDate = DateHelper.parseBogotaDate(conciliacionDateStr);
+    
+    // Limpiar resultados de conciliación previos
+    currentResults = currentResults.filter(r => r.type !== 'conciliacion');
+    
+    let currentCalculationDate = conciliacionDate;
+    
+    processesConciliacion.forEach((process, index) => {
+        let processDate;
+        
+        if (index === 0 || process.days === 0) {
+            processDate = new Date(conciliacionDate);
+        } else {
+            processDate = addBusinessDays(currentCalculationDate, process.days);
+        }
+        
+        currentResults.push({
+            ...process,
+            date: processDate,
+            dateString: processDate.toISOString().split('T')[0]
+        });
+        
+        currentCalculationDate = new Date(processDate);
+    });
+    
+    displayTimeline();
+    showCalculateSection();
+}
+
+// Función para calcular todos los procesos de insolvencia
+function calculateAllInsolvencia() {
     calculateTimelineInicio();
     calculateTimelineFirme();
 }
 
-// Función para limpiar todos los resultados
-function clearResults() {
-    currentResults = [];
+// Funciones para limpiar resultados específicos
+function clearInsolvenciaResults() {
+    currentResults = currentResults.filter(r => r.type !== 'inicio' && r.type !== 'firme');
+    displayTimeline();
+}
+
+function clearConciliacionResults() {
+    currentResults = currentResults.filter(r => r.type !== 'conciliacion');
     displayTimeline();
 }
 
@@ -662,12 +746,40 @@ function showCalculateSection() {
 function displayTimeline() {
     const containerInicio = document.getElementById('timelineInicio');
     const containerFirme = document.getElementById('timelineFirme');
+    const containerConciliacion = document.getElementById('timelineConciliacion');
     
-    if (currentResults.length === 0) {
-        containerInicio.innerHTML = '<div class="no-items">No hay procesos de inicio configurados</div>';
-        containerFirme.innerHTML = '<div class="no-items">No hay procesos en firme configurados</div>';
-        return;
+    // Mostrar/ocultar columnas según el tab activo
+    const columnInicio = document.getElementById('columnInicio');
+    const columnFirme = document.getElementById('columnFirme');
+    const columnConciliacion = document.getElementById('columnConciliacion');
+    const timelineContainer = document.getElementById('timelineContainer');
+    
+    if (currentCalculationTab === 'insolvencia') {
+        // Mostrar solo columnas de insolvencia
+        columnInicio.style.display = 'block';
+        columnFirme.style.display = 'block';
+        columnConciliacion.style.display = 'none';
+        timelineContainer.classList.remove('timeline-columns-one');
+        timelineContainer.classList.add('timeline-columns-two');
+        if (currentResults.length === 0) {
+            containerInicio.innerHTML = '<div class="no-items">No hay procesos de inicio configurados</div>';
+            containerFirme.innerHTML = '<div class="no-items">No hay procesos en firme configurados</div>';
+            return;
+        }
+    } else {
+        // Mostrar solo columna de conciliación
+        columnInicio.style.display = 'none';
+        columnFirme.style.display = 'none';
+        columnConciliacion.style.display = 'block';
+        timelineContainer.classList.remove('timeline-columns-two');
+        timelineContainer.classList.add('timeline-columns-one');
+        if (currentResults.length === 0) {
+            containerConciliacion.innerHTML = '<div class="no-items">No hay procesos de conciliación configurados</div>';
+            return;
+        }
     }
+    
+    
     
     const formatOptions = { 
         weekday: 'long', 
@@ -679,6 +791,7 @@ function displayTimeline() {
     // Filtrar resultados por tipo
     const resultsInicio = currentResults.filter(r => r.type === 'inicio');
     const resultsFirme = currentResults.filter(r => r.type === 'firme');
+    const resultsConciliacion = currentResults.filter(r => r.type === 'conciliacion');
     
     // Mostrar procesos de inicio
     if (resultsInicio.length === 0) {
@@ -711,6 +824,28 @@ function displayTimeline() {
             
             return `
                 <div class="timeline-item firme">
+                    <div class="timeline-header">
+                        <span class="timeline-title">${result.name}</span>
+                        <span class="timeline-date">${formattedDate}</span>
+                    </div>
+                    <div class="timeline-body">
+                        <div class="timeline-description">${result.description}</div>
+                        <span class="item-badge">+${result.days} días</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Mostrar procesos de conciliación
+    if (resultsConciliacion.length === 0) {
+        containerConciliacion.innerHTML = '<div class="no-items">No hay procesos de conciliación configurados</div>';
+    } else {
+        containerConciliacion.innerHTML = resultsConciliacion.map(result => {
+            const formattedDate = result.date.toLocaleDateString('es-ES', formatOptions);
+            
+            return `
+                <div class="timeline-item conciliacion">
                     <div class="timeline-header">
                         <span class="timeline-title">${result.name}</span>
                         <span class="timeline-date">${formattedDate}</span>
@@ -770,13 +905,49 @@ function switchProcessTab(tabType) {
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.getElementById(`tab${tabType === 'inicio' ? 'Inicio' : 'Firme'}`).classList.add('active');
+    
+    let tabId;
+    if (tabType === 'inicio') tabId = 'tabInicio';
+    else if (tabType === 'firme') tabId = 'tabFirme';
+    else if (tabType === 'conciliacion') tabId = 'tabConciliacion';
+    
+    document.getElementById(tabId).classList.add('active');
     
     // Actualizar contenido de tabs
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    document.getElementById(`tab${tabType === 'inicio' ? 'Inicio' : 'Firme'}Content`).classList.add('active');
+    
+    let contentId;
+    if (tabType === 'inicio') contentId = 'tabInicioContent';
+    else if (tabType === 'firme') contentId = 'tabFirmeContent';
+    else if (tabType === 'conciliacion') contentId = 'tabConciliacionContent';
+    
+    document.getElementById(contentId).classList.add('active');
+}
+
+// Función para cambiar entre tabs de cálculo
+function switchCalculationTab(tabType) {
+    currentCalculationTab = tabType;
+    
+    // Actualizar botones de tabs de cálculo
+    document.querySelectorAll('.process-type-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const tabId = tabType === 'insolvencia' ? 'calculationTabInsolvencia' : 'calculationTabConciliacion';
+    document.getElementById(tabId).classList.add('active');
+    
+    // Actualizar paneles de cálculo
+    document.querySelectorAll('.calculation-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    
+    const panelId = tabType === 'insolvencia' ? 'insolvenciaCalculationPanel' : 'conciliacionCalculationPanel';
+    document.getElementById(panelId).classList.add('active');
+    
+    // Actualizar timeline para mostrar solo las columnas relevantes
+    displayTimeline();
 }
 
 // Función de debug para limpiar localStorage
