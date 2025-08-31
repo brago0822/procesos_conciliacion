@@ -7,8 +7,9 @@ let editingProcessIndex = -1;
 let editingProcessType = 'inicio';
 let currentProcessTab = 'inicio';
 
-// Festivos oficiales de Colombia 2025 - CORREGIDOS según fuentes oficiales
+// Festivos oficiales de Colombia 2025-2026 según fuentes oficiales
 const baseHolidays = [
+    // Festivos 2025
     { name: 'Año Nuevo', date: '2025-01-01', custom: false },
     { name: 'Día de los Reyes Magos', date: '2025-01-06', custom: false },
     { name: 'Día de San José', date: '2025-03-24', custom: false },
@@ -25,7 +26,27 @@ const baseHolidays = [
     { name: 'Día de Todos los Santos', date: '2025-11-03', custom: false },
     { name: 'Independencia de Cartagena', date: '2025-11-17', custom: false },
     { name: 'Inmaculada Concepción', date: '2025-12-08', custom: false },
-    { name: 'Navidad', date: '2025-12-25', custom: false }
+    { name: 'Navidad', date: '2025-12-25', custom: false },
+    
+    // Festivos 2026
+    { name: 'Año Nuevo', date: '2026-01-01', custom: false },
+    { name: 'Día de los Reyes Magos', date: '2026-01-12', custom: false },
+    { name: 'Día de San José', date: '2026-03-23', custom: false },
+    { name: 'Jueves Santo', date: '2026-04-02', custom: false },
+    { name: 'Viernes Santo', date: '2026-04-03', custom: false },
+    { name: 'Día del Trabajo', date: '2026-05-01', custom: false },
+    { name: 'Día de la Ascensión', date: '2026-05-18', custom: false },
+    { name: 'Corpus Christi', date: '2026-06-08', custom: false },
+    { name: 'Sagrado Corazón de Jesús', date: '2026-06-15', custom: false },
+    { name: 'San Pedro y San Pablo', date: '2026-06-29', custom: false },
+    { name: 'Día de la Independencia', date: '2026-07-20', custom: false },
+    { name: 'Batalla de Boyacá', date: '2026-08-07', custom: false },
+    { name: 'Asunción de la Virgen', date: '2026-08-17', custom: false },
+    { name: 'Día de la Raza', date: '2026-10-12', custom: false },
+    { name: 'Día de Todos los Santos', date: '2026-11-02', custom: false },
+    { name: 'Independencia de Cartagena', date: '2026-11-16', custom: false },
+    { name: 'Inmaculada Concepción', date: '2026-12-08', custom: false },
+    { name: 'Navidad', date: '2026-12-25', custom: false }
 ];
 
 // Procesos por defecto
@@ -130,8 +151,21 @@ document.addEventListener('DOMContentLoaded', function() {
         handleEditProcess();
     });
 
-    document.getElementById('calculateBtn').addEventListener('click', function() {
-        calculateTimeline();
+    // Event listeners para los nuevos botones de cálculo
+    document.getElementById('calculateInicioBtn').addEventListener('click', function() {
+        calculateTimelineInicio();
+    });
+    
+    document.getElementById('calculateFirmeBtn').addEventListener('click', function() {
+        calculateTimelineFirme();
+    });
+    
+    document.getElementById('calculateAllBtn').addEventListener('click', function() {
+        calculateAllTimeline();
+    });
+    
+    document.getElementById('clearResultsBtn').addEventListener('click', function() {
+        clearResults();
     });
     
     // Mobile menu functionality
@@ -151,15 +185,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Detectar Enter y disparar el botón
+    // Detectar Enter en campos de fecha
     dateInput.addEventListener('keydown', (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            document.getElementById('calculateBtn').click();
-            // 🔄 To focus the date at starting again
+            document.getElementById('calculateInicioBtn').click();
             setTimeout(() => {
-                dateInput.blur();   // quita el foco
-                dateInput.focus();  // lo vuelve a poner al inicio
+                dateInput.blur();
+                dateInput.focus();
+            }, 50);
+        }
+    });
+    
+    const firmeDateInput = document.getElementById('firmeDate');
+    firmeDateInput.addEventListener('keydown', (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById('calculateFirmeBtn').click();
+            setTimeout(() => {
+                firmeDateInput.blur();
+                firmeDateInput.focus();
             }, 50);
         }
     });
@@ -507,23 +552,25 @@ function addBusinessDays(startDate, days) {
     return new Date(currentDate);
 }
 
-function calculateTimeline() {
-    if (processes.length === 0) {
-        alert('Debe configurar al menos un proceso antes de calcular');
+// Función para calcular solo procesos de inicio
+function calculateTimelineInicio() {
+    const processesInicio = processes.filter(p => p.type === 'inicio');
+    if (processesInicio.length === 0) {
+        alert('No hay procesos de inicio configurados');
         return;
     }
     
     const startDateStr = document.getElementById('startDate').value;
     if (!startDateStr) {
-        alert('Por favor ingrese la fecha de inicio');
+        alert('Por favor ingrese la fecha de inicio del trámite');
         return;
     }
     
     const startDate = DateHelper.parseBogotaDate(startDateStr);
-    currentResults = [];
     
-    // Calcular procesos de inicio
-    const processesInicio = processes.filter(p => p.type === 'inicio');
+    // Limpiar resultados de inicio previos
+    currentResults = currentResults.filter(r => r.type !== 'inicio');
+    
     let currentCalculationDate = startDate;
     
     processesInicio.forEach((process, index) => {
@@ -544,21 +591,39 @@ function calculateTimeline() {
         currentCalculationDate = new Date(processDate);
     });
     
-    // Calcular procesos en firme (secuencial entre ellos)
+    displayTimeline();
+    showCalculateSection();
+}
+
+// Función para calcular solo procesos en firme
+function calculateTimelineFirme() {
     const processesFirme = processes.filter(p => p.type === 'firme');
-    let currentFirmeCalculationDate = startDate;
+    if (processesFirme.length === 0) {
+        alert('No hay procesos en firme configurados');
+        return;
+    }
+    
+    const firmeDateStr = document.getElementById('firmeDate').value;
+    if (!firmeDateStr) {
+        alert('Por favor ingrese la fecha de trámite en firme');
+        return;
+    }
+    
+    const firmeDate = DateHelper.parseBogotaDate(firmeDateStr);
+    
+    // Limpiar resultados en firme previos
+    currentResults = currentResults.filter(r => r.type !== 'firme');
+    
+    let currentFirmeCalculationDate = firmeDate;
     
     processesFirme.forEach((process, index) => {
         let processDate;
         
         if (process.days === 0) {
-            // Solo si el proceso tiene 0 días, usar fecha de inicio exacta
-            processDate = new Date(startDate);
+            processDate = new Date(firmeDate);
         } else if (index === 0) {
-            // Primer proceso en firme calcula sus días desde la fecha de inicio
-            processDate = addBusinessDays(startDate, process.days);
+            processDate = addBusinessDays(firmeDate, process.days);
         } else {
-            // Procesos siguientes calculan desde el proceso anterior
             processDate = addBusinessDays(currentFirmeCalculationDate, process.days);
         }
         
@@ -572,7 +637,23 @@ function calculateTimeline() {
     });
     
     displayTimeline();
-    
+    showCalculateSection();
+}
+
+// Función para calcular ambos tipos de procesos
+function calculateAllTimeline() {
+    calculateTimelineInicio();
+    calculateTimelineFirme();
+}
+
+// Función para limpiar todos los resultados
+function clearResults() {
+    currentResults = [];
+    displayTimeline();
+}
+
+// Función auxiliar para mostrar la sección de cálculo
+function showCalculateSection() {
     if (!document.getElementById('calculate').classList.contains('active')) {
         showSection('calculate');
     }

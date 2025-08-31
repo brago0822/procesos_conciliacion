@@ -162,14 +162,32 @@
                 <h1 class="page-title">Cálculo de Fechas</h1>
                 <p class="page-subtitle">Genera el cronograma automático de tu proceso</p>
             </div>
-            <div class="info-box">
-                <div class="panel">
+            <div class="panel">
                 <h2>📅 Configuración del Cálculo</h2>
-                <div class="form-group">
-                    <label for="startDate">Fecha de Inicio del Trámite:</label>
-                    <input type="date" id="startDate" required>
+                <div class="calculation-sections">
+                    <div class="calculation-section">
+                        <h3 class="section-title">📅 Inicio de Trámite</h3>
+                        <div class="form-group">
+                            <label for="startDate">Fecha de Inicio del Trámite:</label>
+                            <input type="date" id="startDate" required>
+                        </div>
+                        <button id="calculateInicioBtn" class="btn btn-success">Calcular Procesos de Inicio</button>
+                    </div>
+                    
+                    <div class="calculation-section">
+                        <h3 class="section-title">⚖️ Trámite en Firme</h3>
+                        <div class="form-group">
+                            <label for="firmeDate">Fecha de Trámite en Firme:</label>
+                            <input type="date" id="firmeDate" required>
+                        </div>
+                        <button id="calculateFirmeBtn" class="btn btn-warning">Calcular Procesos en Firme</button>
+                    </div>
                 </div>
-                <button id="calculateBtn" class="btn btn-success">Calcular Cronograma</button>
+                
+                <div class="calculation-controls">
+                    <button id="calculateAllBtn" class="btn btn-primary">Calcular Todo el Cronograma</button>
+                    <button id="clearResultsBtn" class="btn btn-secondary">Limpiar Resultados</button>
+                </div>
             </div>
 
             <div class="panel">
